@@ -130,7 +130,10 @@ function splitIntoSentences(text) {
 }
 
 function buildExamQuestionInstructions(questionTypes, questionCount) {
-  const normalizedQuestionTypes = normalizeQuestionTypes(questionTypes, EXAM_QUESTION_TYPES);
+  const normalizedQuestionTypes = normalizeQuestionTypes(
+    questionTypes,
+    EXAM_QUESTION_TYPES,
+  );
   const plan = getQuestionPlan(
     normalizedQuestionTypes,
     clampQuestionCount(questionCount, normalizedQuestionTypes.length || 1),
@@ -397,7 +400,13 @@ function coerceGeneratedNote(
       .map((point) => punctuate(point))
       .filter((point) => point.length >= 5),
     profile.keyPointTarget,
-    (index) => punctuate(normalizedSections[index % normalizedSections.length]?.body.slice(0, 120)),
+    (index) =>
+      punctuate(
+        normalizedSections[index % normalizedSections.length]?.body.slice(
+          0,
+          120,
+        ),
+      ),
   ).slice(0, 10);
 
   const normalizedTitle =
@@ -451,30 +460,33 @@ async function generateWithGroq(prompt) {
     throw new Error("Groq API key not configured");
   }
 
-  const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
-    },
-    body: JSON.stringify({
-      model: "llama-3.3-70b-versatile",
-      response_format: {
-        type: "json_object",
+  const response = await fetch(
+    "https://api.groq.com/openai/v1/chat/completions",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${process.env.GROQ_API_KEY}`,
       },
-      temperature: 0.3,
-      messages: [
-        {
-          role: "system",
-          content: "Return valid JSON only.",
+      body: JSON.stringify({
+        model: "llama-3.3-70b-versatile",
+        response_format: {
+          type: "json_object",
         },
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-    }),
-  });
+        temperature: 0.3,
+        messages: [
+          {
+            role: "system",
+            content: "Return valid JSON only.",
+          },
+          {
+            role: "user",
+            content: prompt,
+          },
+        ],
+      }),
+    },
+  );
 
   if (!response.ok) {
     const errorText = await response.text();
@@ -532,17 +544,23 @@ export async function generateStructuredNotes({
     parsed = await generateAndParseWithProvider("gemini", prompt);
   } catch (geminiError) {
     if (!process.env.GROQ_API_KEY) {
-      throw new Error(`Gemini request failed: ${geminiError.message}`);
-    }
-
-    console.warn("Gemini failed, trying Groq fallback", geminiError.message);
-
-    try {
-      parsed = await generateAndParseWithProvider("groq", prompt);
-    } catch (groqError) {
-      throw new Error(
-        `Gemini request failed: ${geminiError.message}. Groq fallback failed: ${groqError.message}`,
+      console.warn(
+        "Gemini unavailable, using local fallback",
+        geminiError.message,
       );
+      parsed = {};
+    } else {
+      console.warn("Gemini failed, trying Groq fallback", geminiError.message);
+
+      try {
+        parsed = await generateAndParseWithProvider("groq", prompt);
+      } catch (groqError) {
+        console.warn(
+          "Groq fallback failed, using local fallback",
+          groqError.message,
+        );
+        parsed = {};
+      }
     }
   }
 

@@ -16,6 +16,10 @@ import {
 const AuthContext = createContext(null);
 const AUTH_STORAGE_KEY = "smart-notes-user";
 
+function isUnauthorizedError(error) {
+  return error?.response?.status === 401;
+}
+
 function readStoredUser() {
   try {
     const rawUser = window.localStorage.getItem(AUTH_STORAGE_KEY);
@@ -53,11 +57,16 @@ export function AuthProvider({ children }) {
           setUser(currentUser);
           storeUser(currentUser);
         }
-      } catch {
-        const storedUser = readStoredUser();
+      } catch (error) {
+        if (mounted) {
+          const storedUser = readStoredUser();
 
-        if (mounted && storedUser) {
-          setUser(storedUser);
+          if (storedUser && !isUnauthorizedError(error)) {
+            setUser(storedUser);
+          } else {
+            setUser(null);
+            storeUser(null);
+          }
         }
       } finally {
         if (mounted) {
@@ -101,14 +110,17 @@ export function AuthProvider({ children }) {
           storeUser(currentUser);
           return currentUser;
         } catch (error) {
-          const storedUser = readStoredUser();
+          if (!isUnauthorizedError(error)) {
+            const storedUser = readStoredUser();
 
-          if (storedUser) {
-            setUser(storedUser);
-            return storedUser;
+            if (storedUser) {
+              setUser(storedUser);
+              return storedUser;
+            }
           }
 
           setUser(null);
+          storeUser(null);
           throw new Error(getErrorMessage(error, "Unable to refresh session"));
         }
       },
