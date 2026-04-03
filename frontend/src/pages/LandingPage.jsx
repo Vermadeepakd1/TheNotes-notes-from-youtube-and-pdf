@@ -198,7 +198,7 @@ export default function LandingPage() {
         <section className="mx-auto max-w-7xl px-6 pb-20">
           <div className="grid gap-6 md:grid-cols-3">
             {featureCards.map((card) => (
-              <div key={card.title} className="rounded-2xl bg-white p-6 shadow-curator">
+              <div key={card.title} className="flex h-full flex-col rounded-2xl bg-white p-6 shadow-curator">
                 <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-primary-fixed/60 text-primary">
                   <MaterialIcon name={card.icon} />
                 </div>

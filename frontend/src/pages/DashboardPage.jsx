@@ -92,45 +92,44 @@ function getExamQuestionMix(questionTypes, total) {
 }
 
 function NoteListItem({ note, active, onClick }) {
-  const hasExamSet = note.mode === "exam" && note.questionCount > 0;
+  const generatedAt = formatGeneratedAt(note.createdAt || note.updatedAt);
 
   return (
     <button
       type="button"
       onClick={onClick}
-      className={`w-full rounded-2xl border p-4 text-left transition-all ${
-        active
-          ? "border-primary/15 bg-primary-fixed/40 shadow-sm"
-          : "border-transparent bg-white hover:border-primary/10 hover:bg-slate-50"
-      }`}
+      className={`w-full rounded-lg px-3 py-2 text-left transition-all ${active ? "bg-primary-fixed/35" : "hover:bg-slate-50"
+        }`}
     >
-      <div className="flex items-start justify-between gap-4">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-secondary">
-            {note.sourceType === "pdf" ? "PDF" : "YouTube"}
-          </p>
-          <h3 className="mt-2 font-headline text-base font-bold text-primary">{note.title}</h3>
+      <div className="flex items-center justify-between gap-3">
+        <h3 className="truncate font-headline text-sm font-bold text-primary">{note.title}</h3>
+        <div className="flex shrink-0 items-center gap-1 text-[11px] font-medium text-on-surface-variant">
+          <span className="material-symbols-outlined text-sm">schedule</span>
+          <span className="whitespace-nowrap">{generatedAt}</span>
         </div>
-        {note.completed ? (
-          <span className="rounded-full bg-secondary-container/60 px-2 py-1 text-[10px] font-bold uppercase tracking-[0.16em] text-secondary">
-            Done
-          </span>
-        ) : null}
-      </div>
-      <p className="mt-3 text-sm leading-6 text-on-surface-variant">{note.summary}</p>
-      <div className="mt-4 flex flex-wrap gap-2 text-[11px] font-bold uppercase tracking-[0.16em] text-on-surface-variant">
-        <span>{note.mode}</span>
-        <span>|</span>
-        <span>{note.folder}</span>
-        {hasExamSet ? (
-          <>
-            <span>|</span>
-            <span>{note.questionCount} questions</span>
-          </>
-        ) : null}
       </div>
     </button>
   );
+}
+
+function formatGeneratedAt(value) {
+  if (!value) {
+    return "Unknown time";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Unknown time";
+  }
+
+  return date.toLocaleString([], {
+    year: "numeric",
+    month: "short",
+    day: "2-digit",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
 }
 
 const modes = [
@@ -319,8 +318,6 @@ export default function DashboardPage() {
 
       if (sourceType === "pdf") {
         setFile(null);
-      } else {
-        setUrl("");
       }
     } catch (submitError) {
       setError(getErrorMessage(submitError, "Unable to generate note"));
@@ -434,11 +431,10 @@ export default function DashboardPage() {
                   setSourceType("pdf");
                   setUrl("");
                 }}
-                className={`rounded-xl px-4 py-3 text-sm font-semibold transition-all ${
-                  sourceType === "pdf"
-                    ? "bg-white text-primary shadow-sm"
-                    : "text-on-surface-variant"
-                }`}
+                className={`rounded-xl px-4 py-3 text-sm font-semibold transition-all ${sourceType === "pdf"
+                  ? "bg-white text-primary shadow-sm"
+                  : "text-on-surface-variant"
+                  }`}
               >
                 PDF upload
               </button>
@@ -448,11 +444,10 @@ export default function DashboardPage() {
                   setSourceType("youtube");
                   setFile(null);
                 }}
-                className={`rounded-xl px-4 py-3 text-sm font-semibold transition-all ${
-                  sourceType === "youtube"
-                    ? "bg-white text-primary shadow-sm"
-                    : "text-on-surface-variant"
-                }`}
+                className={`rounded-xl px-4 py-3 text-sm font-semibold transition-all ${sourceType === "youtube"
+                  ? "bg-white text-primary shadow-sm"
+                  : "text-on-surface-variant"
+                  }`}
               >
                 YouTube link
               </button>
@@ -517,11 +512,10 @@ export default function DashboardPage() {
                 {modes.map((item) => (
                   <label
                     key={item.value}
-                    className={`flex cursor-pointer items-start gap-3 rounded-2xl p-4 transition-all ${
-                      mode === item.value
-                        ? "bg-primary-fixed/50 ring-1 ring-primary/10"
-                        : "bg-surface-container-low"
-                    }`}
+                    className={`flex cursor-pointer items-start gap-3 rounded-2xl p-4 transition-all ${mode === item.value
+                      ? "bg-primary-fixed/50 ring-1 ring-primary/10"
+                      : "bg-surface-container-low"
+                      }`}
                   >
                     <input
                       type="radio"
@@ -584,11 +578,10 @@ export default function DashboardPage() {
                     return (
                       <label
                         key={format.value}
-                        className={`flex cursor-pointer items-start gap-3 rounded-2xl border px-4 py-4 transition-all ${
-                          active
-                            ? "border-primary/15 bg-white shadow-sm"
-                            : "border-transparent bg-white/60"
-                        }`}
+                        className={`flex cursor-pointer items-start gap-3 rounded-2xl border px-4 py-4 transition-all ${active
+                          ? "border-primary/15 bg-white shadow-sm"
+                          : "border-transparent bg-white/60"
+                          }`}
                       >
                         <input
                           type="checkbox"
@@ -723,7 +716,7 @@ export default function DashboardPage() {
             ) : null}
           </div>
 
-          <div className="mt-6 space-y-3">
+          <div className="mt-6 grid gap-1 divide-y divide-slate-100">
             {loading ? (
               <div className="rounded-2xl bg-surface-container-low px-4 py-6 text-sm text-on-surface-variant">
                 Loading your notes...

@@ -14,15 +14,14 @@ function ArchivedItem({ note, active, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className={`w-full rounded-2xl border px-4 py-4 text-left transition-all ${
-        active
-          ? "border-secondary/15 bg-secondary-container/45"
-          : "border-transparent bg-white hover:border-secondary/10 hover:bg-surface-container-low"
-      }`}
+      className={`flex h-full w-full flex-col rounded-2xl border px-4 py-4 text-left transition-all ${active
+        ? "border-secondary/15 bg-secondary-container/45"
+        : "border-transparent bg-white hover:border-secondary/10 hover:bg-surface-container-low"
+        }`}
     >
       <p className="text-xs font-bold uppercase tracking-[0.18em] text-secondary">Archived</p>
-      <h3 className="mt-2 font-headline text-base font-bold text-primary">{note.title}</h3>
-      <p className="mt-2 text-sm leading-6 text-on-surface-variant">{note.summary}</p>
+      <h3 className="note-card-title mt-2 font-headline text-base font-bold text-primary">{note.title}</h3>
+      <p className="note-card-summary mt-2 text-sm leading-6 text-on-surface-variant">{note.summary}</p>
     </button>
   );
 }
@@ -171,7 +170,7 @@ export default function ArchivePage() {
           </div>
         ) : null}
 
-        <div className="mt-6 space-y-2">
+        <div className="mt-6 grid max-h-[58vh] gap-2 overflow-y-auto pr-1">
           {loading ? (
             <div className="rounded-2xl bg-surface-container-low px-4 py-6 text-sm text-on-surface-variant">
               Loading archive...
