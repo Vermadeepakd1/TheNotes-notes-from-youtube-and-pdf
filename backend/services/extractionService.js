@@ -18,11 +18,99 @@ async function extractYoutubeText(url) {
 
   try {
     transcript = await fetchTranscript(url, { lang: "en" });
-  } catch {
-    transcript = await fetchTranscript(url);
+  } catch (error) {
+    try {
+      transcript = await fetchTranscript(url);
+    } catch (fallbackError) {
+      const metadata = await extractYoutubeMetadata(url);
+
+      return {
+        text: cleanExtractedText(
+          [
+            metadata.title,
+            metadata.description,
+            `Transcript unavailable for ${url}.`,
+          ]
+            .filter(Boolean)
+            .join(" "),
+        ),
+        title: metadata.title,
+      };
+    }
   }
 
-  return cleanExtractedText(transcript.map((entry) => entry.text).join(" "));
+  return {
+    text: cleanExtractedText(transcript.map((entry) => entry.text).join(" ")),
+    title: "",
+  };
+}
+
+async function extractYoutubeMetadata(url) {
+  try {
+    const response = await fetch(url, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
+      },
+    });
+
+    if (!response.ok) {
+      return getFallbackYoutubeMetadata(url);
+    }
+
+    const html = await response.text();
+    const title =
+      extractMetaContent(html, "og:title") ||
+      extractTitle(html) ||
+      "YouTube Lecture";
+    const description =
+      extractMetaContent(html, "og:description") ||
+      extractMetaContent(html, "description") ||
+      "";
+
+    return {
+      title,
+      description,
+    };
+  } catch {
+    return getFallbackYoutubeMetadata(url);
+  }
+}
+
+function extractMetaContent(html, property) {
+  const escapedProperty = property.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const metaPattern = new RegExp(
+    `<meta[^>]+(?:property|name)=["']${escapedProperty}["'][^>]+content=["']([^"']+)["'][^>]*>`,
+    "i",
+  );
+  const match = html.match(metaPattern);
+
+  return match?.[1] ? decodeHtmlEntities(match[1]) : "";
+}
+
+function extractTitle(html) {
+  const match = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+
+  return match?.[1]
+    ? decodeHtmlEntities(match[1].replace(/\s*-\s*YouTube\s*$/i, ""))
+    : "";
+}
+
+function decodeHtmlEntities(value) {
+  return value
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&amp;/g, "&")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">")
+    .replace(/&nbsp;/g, " ");
+}
+
+function getFallbackYoutubeMetadata(url) {
+  return {
+    title: getYoutubeSourceTitle(url),
+    description: "",
+  };
 }
 
 function getYoutubeSourceTitle(url) {
@@ -57,7 +145,8 @@ export async function extractSourceContent({ file, url }) {
   }
 
   if (url) {
-    const text = await extractYoutubeText(url);
+    const youtubeContent = await extractYoutubeText(url);
+    const text = youtubeContent.text;
 
     if (!text) {
       throw new Error("Could not extract a transcript from this YouTube video");
@@ -65,7 +154,7 @@ export async function extractSourceContent({ file, url }) {
 
     return {
       sourceType: "youtube",
-      sourceTitle: getYoutubeSourceTitle(url),
+      sourceTitle: youtubeContent.title || getYoutubeSourceTitle(url),
       sourceUrl: url,
       sourceText: text,
     };
