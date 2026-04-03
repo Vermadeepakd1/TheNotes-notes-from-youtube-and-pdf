@@ -1,0 +1,13 @@
+node_modules/
+dist/
+.env
+frontend/.env
+backend/.env
+.DS_Store
+coverage/
+logs/
+tmp-sample.pdf
+stitch_exports
+stitch_exports/
+logs/
+logs
