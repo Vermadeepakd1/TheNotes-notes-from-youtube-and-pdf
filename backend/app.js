@@ -11,13 +11,38 @@ dotenv.config();
 
 const app = express();
 const port = Number(process.env.PORT) || 5000;
-const configuredFrontendUrls = (
-  process.env.FRONTEND_URL || "http://127.0.0.1:5173"
-)
-  .split(",")
-  .map((url) => url.trim())
-  .filter(Boolean)
-  .map((url) => url.replace(/\/$/, ""));
+const configuredFrontendUrls = expandLoopbackOrigins(
+  (process.env.FRONTEND_URL || "http://127.0.0.1:5173").split(","),
+);
+
+function expandLoopbackOrigins(urls) {
+  const normalizedUrls = urls
+    .map((url) => url.trim())
+    .filter(Boolean)
+    .map((url) => url.replace(/\/$/, ""));
+  const expandedUrls = new Set(normalizedUrls);
+
+  normalizedUrls.forEach((url) => {
+    try {
+      const parsedUrl = new URL(url);
+      const hostname = parsedUrl.hostname.replace(/^www\./i, "");
+
+      if (hostname === "127.0.0.1") {
+        parsedUrl.hostname = "localhost";
+        expandedUrls.add(parsedUrl.toString().replace(/\/$/, ""));
+      }
+
+      if (hostname === "localhost") {
+        parsedUrl.hostname = "127.0.0.1";
+        expandedUrls.add(parsedUrl.toString().replace(/\/$/, ""));
+      }
+    } catch {
+      // Ignore invalid URLs and keep the original value only.
+    }
+  });
+
+  return [...expandedUrls];
+}
 
 app.use(
   cors({

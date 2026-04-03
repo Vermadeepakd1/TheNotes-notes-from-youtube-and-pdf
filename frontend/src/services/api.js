@@ -1,10 +1,23 @@
 import axios from "axios";
 
 const isProduction = import.meta.env.PROD;
-const localApiBase =
-  import.meta.env.VITE_API_URL || "http://127.0.0.1:5000/api";
+const localApiBase = import.meta.env.VITE_API_URL || resolveLocalApiBase();
 
 export const API_BASE_URL = isProduction ? "/api" : localApiBase;
+
+function resolveLocalApiBase() {
+  if (typeof window === "undefined") {
+    return "http://localhost:5000/api";
+  }
+
+  const currentHost = window.location.hostname;
+
+  if (currentHost === "localhost" || currentHost === "127.0.0.1") {
+    return `${window.location.protocol}//${currentHost}:5000/api`;
+  }
+
+  return "http://localhost:5000/api";
+}
 
 const api = axios.create({
   baseURL: API_BASE_URL,

@@ -14,66 +14,86 @@ async function extractPdfText(file) {
 }
 
 async function extractYoutubeText(url) {
-  let transcript;
+  const videoId = parseYoutubeVideoId(url);
+  const canonicalUrl = videoId ? buildCanonicalYoutubeUrl(videoId) : url;
+  const metadata = await extractYoutubeMetadata({ url: canonicalUrl, videoId });
 
   try {
-    transcript = await fetchTranscript(url, { lang: "en" });
+    const transcript = await fetchTranscript(canonicalUrl, { lang: "en" });
+
+    return {
+      text: buildYoutubeSourceText({
+        metadata,
+        transcriptText: transcript.map((entry) => entry.text).join(" "),
+        url: canonicalUrl,
+      }),
+      title: metadata.title,
+    };
   } catch (error) {
     try {
-      transcript = await fetchTranscript(url);
-    } catch (fallbackError) {
-      const metadata = await extractYoutubeMetadata(url);
+      const transcript = await fetchTranscript(canonicalUrl);
 
       return {
-        text: cleanExtractedText(
-          [
-            metadata.title,
-            metadata.description,
-            `Transcript unavailable for ${url}.`,
-          ]
-            .filter(Boolean)
-            .join(" "),
-        ),
+        text: buildYoutubeSourceText({
+          metadata,
+          transcriptText: transcript.map((entry) => entry.text).join(" "),
+          url: canonicalUrl,
+        }),
+        title: metadata.title,
+      };
+    } catch {
+      return {
+        text: buildYoutubeFallbackText({ metadata, url: canonicalUrl }),
         title: metadata.title,
       };
     }
   }
-
-  return {
-    text: cleanExtractedText(transcript.map((entry) => entry.text).join(" ")),
-    title: "",
-  };
 }
 
-async function extractYoutubeMetadata(url) {
+async function extractYoutubeMetadata({ url, videoId }) {
   try {
-    const response = await fetch(url, {
+    const response = await fetch(
+      `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`,
+      {
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
+        },
+      },
+    );
+
+    const oembed = response.ok ? await response.json() : null;
+
+    const pageResponse = await fetch(url, {
       headers: {
         "User-Agent":
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36",
       },
     });
 
-    if (!response.ok) {
-      return getFallbackYoutubeMetadata(url);
-    }
-
-    const html = await response.text();
+    const html = pageResponse.ok ? await pageResponse.text() : "";
     const title =
       extractMetaContent(html, "og:title") ||
       extractTitle(html) ||
-      "YouTube Lecture";
+      oembed?.title ||
+      getFallbackYoutubeMetadata(videoId || url).title;
     const description =
       extractMetaContent(html, "og:description") ||
       extractMetaContent(html, "description") ||
       "";
+    const channel =
+      oembed?.author_name || extractMetaContent(html, "author") || "";
+    const thumbnail =
+      oembed?.thumbnail_url || extractMetaContent(html, "og:image") || "";
 
     return {
       title,
+      channel,
       description,
+      thumbnail,
     };
   } catch {
-    return getFallbackYoutubeMetadata(url);
+    return getFallbackYoutubeMetadata(videoId || url);
   }
 }
 
@@ -109,23 +129,90 @@ function decodeHtmlEntities(value) {
 function getFallbackYoutubeMetadata(url) {
   return {
     title: getYoutubeSourceTitle(url),
+    channel: "",
     description: "",
+    thumbnail: "",
   };
 }
 
 function getYoutubeSourceTitle(url) {
-  try {
-    const parsedUrl = new URL(url);
-    const videoId = parsedUrl.searchParams.get("v");
+  const videoId = parseYoutubeVideoId(url);
 
-    if (videoId) {
-      return `YouTube Lecture (${videoId})`;
-    }
-  } catch {
-    return "YouTube Lecture";
+  if (videoId) {
+    return `YouTube Lecture (${videoId})`;
   }
 
   return "YouTube Lecture";
+}
+
+function parseYoutubeVideoId(url) {
+  try {
+    const parsedUrl = new URL(url);
+    const hostname = parsedUrl.hostname.replace(/^www\./i, "");
+
+    if (hostname === "youtu.be") {
+      const pathId = parsedUrl.pathname.split("/").filter(Boolean)[0];
+      return cleanVideoId(pathId);
+    }
+
+    if (hostname.includes("youtube.com")) {
+      const queryId = parsedUrl.searchParams.get("v");
+
+      if (queryId) {
+        return cleanVideoId(queryId);
+      }
+
+      const pathParts = parsedUrl.pathname.split("/").filter(Boolean);
+      const [firstPart, secondPart] = pathParts;
+
+      if (
+        firstPart === "shorts" ||
+        firstPart === "embed" ||
+        firstPart === "live"
+      ) {
+        return cleanVideoId(secondPart);
+      }
+    }
+  } catch {
+    return "";
+  }
+
+  return "";
+}
+
+function cleanVideoId(value) {
+  return typeof value === "string" ? value.trim() : "";
+}
+
+function buildCanonicalYoutubeUrl(videoId) {
+  return `https://www.youtube.com/watch?v=${encodeURIComponent(videoId)}`;
+}
+
+function buildYoutubeSourceText({ metadata, transcriptText, url }) {
+  return cleanExtractedText(
+    [
+      metadata.title,
+      metadata.channel ? `Channel: ${metadata.channel}` : "",
+      metadata.description,
+      transcriptText,
+      `Source URL: ${url}`,
+    ]
+      .filter(Boolean)
+      .join(" "),
+  );
+}
+
+function buildYoutubeFallbackText({ metadata, url }) {
+  return cleanExtractedText(
+    [
+      metadata.title,
+      metadata.channel ? `Channel: ${metadata.channel}` : "",
+      metadata.description,
+      `Transcript unavailable for ${url}.`,
+    ]
+      .filter(Boolean)
+      .join(" "),
+  );
 }
 
 export async function extractSourceContent({ file, url }) {
