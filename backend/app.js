@@ -11,11 +11,31 @@ dotenv.config();
 
 const app = express();
 const port = Number(process.env.PORT) || 5000;
-const frontendUrl = process.env.FRONTEND_URL || "http://127.0.0.1:5173";
+const configuredFrontendUrls = (
+  process.env.FRONTEND_URL || "http://127.0.0.1:5173"
+)
+  .split(",")
+  .map((url) => url.trim())
+  .filter(Boolean)
+  .map((url) => url.replace(/\/$/, ""));
 
 app.use(
   cors({
-    origin: frontendUrl,
+    origin(origin, callback) {
+      if (!origin) {
+        callback(null, true);
+        return;
+      }
+
+      const normalizedOrigin = origin.replace(/\/$/, "");
+
+      if (configuredFrontendUrls.includes(normalizedOrigin)) {
+        callback(null, true);
+        return;
+      }
+
+      callback(new Error("Not allowed by CORS"));
+    },
     credentials: true,
   }),
 );
