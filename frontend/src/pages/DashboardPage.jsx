@@ -428,9 +428,6 @@ export default function DashboardPage() {
                 Create a new smart note
               </h1>
             </div>
-            <div className="rounded-full bg-primary-fixed/60 px-3 py-2 text-xs font-bold uppercase tracking-[0.16em] text-primary">
-              Live
-            </div>
           </div>
 
           <form onSubmit={handleGenerate} className="mt-8 space-y-6">

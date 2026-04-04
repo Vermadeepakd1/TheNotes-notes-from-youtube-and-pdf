@@ -242,7 +242,7 @@ export default function NoteViewer({
           <div className="flex items-center space-x-2">
             <div className="h-2 w-2 animate-pulse rounded-full bg-secondary" />
             <span className="text-xs font-bold uppercase tracking-widest text-secondary">
-              Live Result
+              Result
             </span>
           </div>
           <div className="flex space-x-2 text-on-surface-variant">
