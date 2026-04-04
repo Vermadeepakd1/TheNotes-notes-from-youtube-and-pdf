@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 const contentMap = {
   help: {
     label: "Help Center",
-    title: "How Smart Notes works",
+    title: "How TheNotes works",
     body: [
       "Upload a PDF or paste a YouTube URL from the dashboard.",
       "The backend extracts content, sends it to Gemini, and stores the generated note in MongoDB.",

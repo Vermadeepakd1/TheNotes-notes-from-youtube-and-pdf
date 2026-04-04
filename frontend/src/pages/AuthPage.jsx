@@ -57,7 +57,7 @@ export default function AuthPage({ mode }) {
 
           <div className="mt-16 max-w-xl">
             <p className="text-sm font-semibold uppercase tracking-[0.2em] text-white/70">
-              Smart Notes Workspace
+              TheNotes Workspace
             </p>
             <h1 className="mt-6 font-headline text-5xl font-extrabold leading-tight">
               {isRegister ? "Create your study workspace" : "Welcome back to your note studio"}

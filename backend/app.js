@@ -70,7 +70,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.get("/", (_request, response) => {
   response.json({
-    name: "Smart Notes Generator API",
+    name: "TheNotes API",
     version: "1.0.0",
     status: "ready",
   });
@@ -97,7 +97,7 @@ async function startServer() {
   await connectToDatabase();
 
   app.listen(port, () => {
-    console.log(`Smart Notes backend running on http://127.0.0.1:${port}`);
+    console.log(`TheNotes backend running on http://127.0.0.1:${port}`);
   });
 }
 

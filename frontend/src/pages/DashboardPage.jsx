@@ -101,12 +101,12 @@ function NoteListItem({ note, active, onClick }) {
       className={`w-full rounded-lg px-3 py-2 text-left transition-all ${active ? "bg-primary-fixed/35" : "hover:bg-slate-50"
         }`}
     >
-      <div className="flex items-center justify-between gap-3">
-        <h3 className="truncate font-headline text-sm font-bold text-primary">{note.title}</h3>
-        <div className="flex shrink-0 items-center gap-1 text-[11px] font-medium text-on-surface-variant">
-          <span className="material-symbols-outlined text-sm">schedule</span>
-          <span className="whitespace-nowrap">{generatedAt}</span>
-        </div>
+      <h3 className="font-headline text-sm font-bold leading-snug text-primary break-words">
+        {note.title}
+      </h3>
+      <div className="mt-1 flex items-center gap-1 text-[11px] font-medium text-on-surface-variant">
+        <span className="material-symbols-outlined text-sm">schedule</span>
+        <span>{generatedAt}</span>
       </div>
     </button>
   );
@@ -261,6 +261,18 @@ export default function DashboardPage() {
     setSelectedNoteId(note.id);
   }
 
+  function removeNoteAndSelectNext(noteId) {
+    let nextSelectedId = "";
+
+    setNotes((current) => {
+      const filtered = current.filter((item) => item.id !== noteId);
+      nextSelectedId = filtered[0]?.id || "";
+      return filtered;
+    });
+
+    setSelectedNoteId((current) => (current === noteId ? nextSelectedId : current));
+  }
+
   function handleToggleQuestionType(type) {
     setSelectedQuestionTypes((current) => {
       const next = current.includes(type)
@@ -370,8 +382,7 @@ export default function DashboardPage() {
       setActionBusy(true);
       setError("");
       const updated = await toggleArchive(selectedNote.id);
-      setNotes((current) => current.filter((item) => item.id !== updated.id));
-      setSelectedNoteId((current) => (current === updated.id ? "" : current));
+      removeNoteAndSelectNext(updated.id);
       setSuccess(updated.archived ? "Note moved to archive." : "Note restored.");
     } catch (actionError) {
       setError(getErrorMessage(actionError, "Unable to archive note"));
@@ -395,8 +406,7 @@ export default function DashboardPage() {
       setActionBusy(true);
       setError("");
       await deleteNote(selectedNote.id);
-      setNotes((current) => current.filter((item) => item.id !== selectedNote.id));
-      setSelectedNoteId("");
+      removeNoteAndSelectNext(selectedNote.id);
       setSuccess("Note deleted.");
     } catch (actionError) {
       setError(getErrorMessage(actionError, "Unable to delete note"));

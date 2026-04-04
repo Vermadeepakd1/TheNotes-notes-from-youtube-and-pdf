@@ -1,6 +1,6 @@
-# Smart Notes Generator
+# TheNotes
 
-Smart Notes Generator is a full-stack web application that converts lecture PDFs and YouTube videos into structured study notes. It is designed for students, competitive exam aspirants, and self-learners who want faster revision, clearer summaries, and exam-oriented question practice.
+TheNotes is a full-stack web application that converts lecture PDFs and YouTube videos into structured study notes. It is designed for students, competitive exam aspirants, and self-learners who want faster revision, clearer summaries, and exam-oriented question practice.
 
 The project uses a single repository with two applications:
 

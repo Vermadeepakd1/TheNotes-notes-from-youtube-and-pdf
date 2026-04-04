@@ -20,6 +20,22 @@ function isUnauthorizedError(error) {
   return error?.response?.status === 401;
 }
 
+function isRecoverableSessionError(error) {
+  if (error?.response) {
+    return false;
+  }
+
+  const code = (error?.code || "").toUpperCase();
+  const message = String(error?.message || "").toLowerCase();
+
+  return (
+    code === "ERR_NETWORK" ||
+    code === "ECONNABORTED" ||
+    message.includes("network") ||
+    message.includes("timeout")
+  );
+}
+
 function readStoredUser() {
   try {
     const rawUser = window.localStorage.getItem(AUTH_STORAGE_KEY);
@@ -61,7 +77,7 @@ export function AuthProvider({ children }) {
         if (mounted) {
           const storedUser = readStoredUser();
 
-          if (storedUser && !isUnauthorizedError(error)) {
+          if (storedUser && isRecoverableSessionError(error)) {
             setUser(storedUser);
           } else {
             setUser(null);
@@ -99,9 +115,12 @@ export function AuthProvider({ children }) {
         return loggedInUser;
       },
       async logout() {
-        await logoutUser();
-        setUser(null);
-        storeUser(null);
+        try {
+          await logoutUser();
+        } finally {
+          setUser(null);
+          storeUser(null);
+        }
       },
       async refresh() {
         try {
@@ -110,7 +129,7 @@ export function AuthProvider({ children }) {
           storeUser(currentUser);
           return currentUser;
         } catch (error) {
-          if (!isUnauthorizedError(error)) {
+          if (!isUnauthorizedError(error) && isRecoverableSessionError(error)) {
             const storedUser = readStoredUser();
 
             if (storedUser) {

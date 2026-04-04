@@ -45,7 +45,7 @@ export default function LandingPage() {
         <div className="mx-auto flex w-full max-w-screen-2xl items-center justify-between px-6 py-4">
           <div className="flex items-center gap-8">
             <span className="font-headline text-xl font-bold tracking-tight text-indigo-950">
-              Smart Notes Generator
+              TheNotes
             </span>
             <div className="hidden items-center gap-6 font-headline text-sm font-medium tracking-tight md:flex">
               <Link className="text-slate-600 transition-colors hover:text-indigo-600" to="/help">
@@ -96,7 +96,7 @@ export default function LandingPage() {
                 AI-POWERED ANALYSIS
               </div>
               <h1 className="mb-8 font-headline text-5xl font-extrabold leading-[1.1] tracking-tight text-primary lg:text-6xl">
-                Turn PDFs and videos into smart notes in seconds
+                Turn PDFs and videos into study notes in seconds
               </h1>
               <p className="mb-10 max-w-xl text-lg leading-relaxed text-on-surface-variant lg:text-xl">
                 The intelligent curator for your study materials. Upload a PDF or paste a YouTube lecture and get structured notes, key points, and exam-ready questions instantly.

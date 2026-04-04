@@ -1,5 +1,49 @@
 import { useEffect, useMemo, useState } from "react";
 
+async function copyTextWithFallback(text) {
+  if (navigator.clipboard?.writeText) {
+    await navigator.clipboard.writeText(text);
+    return true;
+  }
+
+  const textArea = document.createElement("textarea");
+  textArea.value = text;
+  textArea.setAttribute("readonly", "");
+  textArea.style.position = "fixed";
+  textArea.style.top = "-9999px";
+  textArea.style.opacity = "0";
+
+  document.body.appendChild(textArea);
+  textArea.select();
+  textArea.setSelectionRange(0, text.length);
+
+  let copied = false;
+
+  try {
+    copied = document.execCommand("copy");
+  } finally {
+    document.body.removeChild(textArea);
+  }
+
+  if (!copied) {
+    throw new Error("Clipboard copy failed");
+  }
+
+  return true;
+}
+
+function resolveShareUrl(note) {
+  if (!note) {
+    return "";
+  }
+
+  if (typeof window !== "undefined" && note.shareId) {
+    return `${window.location.origin}/shared/${note.shareId}`;
+  }
+
+  return note.shareUrl || "";
+}
+
 function MaterialIcon({ name, className = "", filled = false }) {
   return (
     <span
@@ -21,11 +65,10 @@ function TabButton({ active, icon, label, onClick }) {
     <button
       type="button"
       onClick={onClick}
-      className={`relative flex items-center space-x-2 pb-4 text-sm transition-colors ${
-        active
-          ? "active-tab-dot font-headline font-bold text-primary"
-          : "font-headline font-medium text-on-surface-variant hover:text-primary"
-      }`}
+      className={`relative flex items-center space-x-2 pb-4 text-sm transition-colors ${active
+        ? "active-tab-dot font-headline font-bold text-primary"
+        : "font-headline font-medium text-on-surface-variant hover:text-primary"
+        }`}
     >
       <MaterialIcon name={icon} className="text-sm" />
       <span>{label}</span>
@@ -93,7 +136,7 @@ export default function NoteViewer({
   const [selectedMcqAnswers, setSelectedMcqAnswers] = useState({});
   const [quizChecked, setQuizChecked] = useState(false);
 
-  const shareUrl = note?.shareUrl;
+  const shareUrl = useMemo(() => resolveShareUrl(note), [note]);
   const markdown = note?.markdown;
   const questionTypes = note?.questionTypes || [];
   const hasStudyKit = note?.mode === "exam" && questionTypes.length > 0;
@@ -132,6 +175,7 @@ export default function NoteViewer({
         icon: "download",
         onClick() {
           if (!markdown || !note) {
+            setFeedback("Markdown is unavailable for this note.");
             return;
           }
 
@@ -153,22 +197,33 @@ export default function NoteViewer({
         icon: "share",
         async onClick() {
           if (!shareUrl) {
+            setFeedback("Share link unavailable for this note.");
             return;
           }
 
-          if (navigator.clipboard?.writeText) {
-            await navigator.clipboard.writeText(shareUrl);
+          try {
+            if (navigator.share) {
+              await navigator.share({
+                title: note?.title || "Smart Note",
+                url: shareUrl,
+              });
+              setFeedback("Share dialog opened.");
+              return;
+            }
+
+            await copyTextWithFallback(shareUrl);
             setFeedback("Share link copied to clipboard.");
-            return;
+          } catch {
+            // Final fallback still exposes the link when copy/share APIs are blocked.
+            setFeedback(`Share link: ${shareUrl}`);
           }
-
-          setFeedback(`Share link: ${shareUrl}`);
         },
       },
       {
         key: "print",
         icon: "print",
         onClick() {
+          setFeedback("Print dialog opened.");
           window.print();
         },
       },
@@ -203,6 +258,15 @@ export default function NoteViewer({
             ))}
           </div>
         </div>
+
+        {feedback ? (
+          <div
+            className="mb-4 rounded-lg bg-secondary-container/40 px-3 py-2 text-xs text-on-surface"
+            aria-live="polite"
+          >
+            {feedback}
+          </div>
+        ) : null}
 
         <div className="flex space-x-8 border-b border-outline-variant/20">
           <TabButton
@@ -385,15 +449,14 @@ export default function NoteViewer({
                                   [index]: option,
                                 }))
                               }
-                              className={`flex w-full items-center justify-between rounded-xl border px-4 py-3 text-left text-sm transition-all ${
-                                isCorrect
-                                  ? "border-secondary bg-secondary-container/35 text-on-surface"
-                                  : isWrong
-                                    ? "border-error bg-error-container text-on-error-container"
-                                    : isSelected
-                                      ? "border-primary bg-primary-fixed/40 text-on-surface"
-                                      : "border-slate-200 bg-white text-on-surface hover:border-primary/20"
-                              }`}
+                              className={`flex w-full items-center justify-between rounded-xl border px-4 py-3 text-left text-sm transition-all ${isCorrect
+                                ? "border-secondary bg-secondary-container/35 text-on-surface"
+                                : isWrong
+                                  ? "border-error bg-error-container text-on-error-container"
+                                  : isSelected
+                                    ? "border-primary bg-primary-fixed/40 text-on-surface"
+                                    : "border-slate-200 bg-white text-on-surface hover:border-primary/20"
+                                }`}
                             >
                               <span>{option}</span>
                               {quizChecked && isCorrect ? (
@@ -454,7 +517,7 @@ export default function NoteViewer({
       <div className="flex flex-wrap items-center justify-between gap-4 border-t border-outline-variant/10 bg-surface-container-low/30 px-10 py-6">
         <div>
           <p className="text-xs italic text-on-surface-variant">
-            Refined by AI Curator Engine v2.4
+            Refined by TheNotes AI Curator
           </p>
           {feedback ? (
             <p className="mt-1 break-all text-xs text-secondary">{feedback}</p>

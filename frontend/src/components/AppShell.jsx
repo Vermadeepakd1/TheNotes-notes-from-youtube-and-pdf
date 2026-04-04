@@ -42,8 +42,11 @@ export default function AppShell() {
   );
 
   async function handleLogout() {
-    await logout();
-    navigate("/");
+    try {
+      await logout();
+    } finally {
+      navigate("/");
+    }
   }
 
   function handleSearchSubmit(event) {
@@ -62,7 +65,7 @@ export default function AppShell() {
             </div>
             <div>
               <h2 className="font-headline text-lg font-extrabold text-indigo-900">
-                Smart Notes
+                TheNotes
               </h2>
               <p className="text-[10px] font-bold uppercase tracking-[0.28em] text-on-surface-variant">
                 The Digital Curator
@@ -94,10 +97,9 @@ export default function AppShell() {
               key={link.to}
               to={link.to}
               className={({ isActive }) =>
-                `my-1 flex items-center space-x-3 rounded-lg px-3 py-2 text-sm font-medium transition-transform duration-200 hover:translate-x-1 ${
-                  isActive
-                    ? "bg-white text-indigo-700 shadow-sm"
-                    : "text-slate-500 hover:text-indigo-600"
+                `my-1 flex items-center space-x-3 rounded-lg px-3 py-2 text-sm font-medium transition-transform duration-200 hover:translate-x-1 ${isActive
+                  ? "bg-white text-indigo-700 shadow-sm"
+                  : "text-slate-500 hover:text-indigo-600"
                 }`
               }
             >
@@ -113,8 +115,7 @@ export default function AppShell() {
               key={link.to}
               to={link.to}
               className={({ isActive }) =>
-                `flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm ${
-                  isActive ? "bg-white text-indigo-700 shadow-sm" : "bg-white/60 text-slate-500"
+                `flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm ${isActive ? "bg-white text-indigo-700 shadow-sm" : "bg-white/60 text-slate-500"
                 }`
               }
             >
@@ -149,7 +150,7 @@ export default function AppShell() {
           <div className="mx-auto flex w-full max-w-screen-2xl items-center justify-between px-6 py-4">
             <div className="flex items-center space-x-8">
               <span className="font-headline text-xl font-bold tracking-tight text-indigo-950">
-                Smart Notes Generator
+                TheNotes
               </span>
               <nav className="hidden items-center space-x-6 font-headline text-sm font-medium tracking-tight md:flex">
                 <NavLink
@@ -232,7 +233,7 @@ export default function AppShell() {
         <footer className="w-full border-t border-slate-200 bg-slate-50 px-6 py-12">
           <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-4 md:flex-row">
             <span className="text-xs tracking-wide text-slate-600">
-              (c) 2026 Smart Notes Generator. All rights reserved.
+              (c) 2026 TheNotes. All rights reserved.
             </span>
             <div className="flex flex-wrap justify-center gap-6">
               {footerLinks.map((link) => (

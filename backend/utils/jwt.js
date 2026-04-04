@@ -31,6 +31,7 @@ export function setAuthCookie(response, token) {
 
   response.cookie(cookieName, token, {
     httpOnly: true,
+    path: "/",
     sameSite,
     secure,
     maxAge: SEVEN_DAYS_IN_MS,
@@ -43,6 +44,7 @@ export function clearAuthCookie(response) {
 
   response.clearCookie(cookieName, {
     httpOnly: true,
+    path: "/",
     sameSite,
     secure,
   });

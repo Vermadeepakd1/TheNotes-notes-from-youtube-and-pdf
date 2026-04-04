@@ -75,6 +75,18 @@ export default function ArchivePage() {
     setSelectedNoteId(note.id);
   }
 
+  function removeNoteAndSelectNext(noteId) {
+    let nextSelectedId = "";
+
+    setNotes((current) => {
+      const filtered = current.filter((item) => item.id !== noteId);
+      nextSelectedId = filtered[0]?.id || "";
+      return filtered;
+    });
+
+    setSelectedNoteId((current) => (current === noteId ? nextSelectedId : current));
+  }
+
   async function handleRegenerate() {
     if (!selectedNote) {
       return;
@@ -115,8 +127,7 @@ export default function ArchivePage() {
     try {
       setBusy(true);
       const updated = await toggleArchive(selectedNote.id);
-      setNotes((current) => current.filter((item) => item.id !== updated.id));
-      setSelectedNoteId("");
+      removeNoteAndSelectNext(updated.id);
     } catch (actionError) {
       setError(getErrorMessage(actionError, "Unable to restore note"));
     } finally {
@@ -138,8 +149,7 @@ export default function ArchivePage() {
     try {
       setBusy(true);
       await deleteNote(selectedNote.id);
-      setNotes((current) => current.filter((item) => item.id !== selectedNote.id));
-      setSelectedNoteId("");
+      removeNoteAndSelectNext(selectedNote.id);
     } catch (actionError) {
       setError(getErrorMessage(actionError, "Unable to delete archived note"));
     } finally {

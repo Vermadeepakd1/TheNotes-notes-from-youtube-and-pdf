@@ -14,7 +14,7 @@ function LoadingScreen() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-surface">
       <div className="rounded-2xl bg-white px-6 py-4 text-sm font-medium text-on-surface shadow-curator">
-        Loading Smart Notes...
+        Loading TheNotes...
       </div>
     </div>
   );

@@ -168,6 +168,18 @@ export default function LibraryPage() {
     setExpandedFolders((current) => (current.includes(folderName) ? current : [...current, folderName]));
   }
 
+  function removeNoteAndSelectNext(noteId) {
+    let nextSelectedId = "";
+
+    setNotes((current) => {
+      const filtered = current.filter((item) => item.id !== noteId);
+      nextSelectedId = filtered[0]?.id || "";
+      return filtered;
+    });
+
+    setSelectedNoteId((current) => (current === noteId ? nextSelectedId : current));
+  }
+
   function handleToggleFolder(folderName) {
     setExpandedFolders((current) =>
       current.includes(folderName)
@@ -222,8 +234,7 @@ export default function LibraryPage() {
     try {
       setBusy(true);
       await toggleArchive(selectedNote.id);
-      setNotes((current) => current.filter((item) => item.id !== selectedNote.id));
-      setSelectedNoteId("");
+      removeNoteAndSelectNext(selectedNote.id);
     } catch (actionError) {
       setError(getErrorMessage(actionError, "Unable to move note to archive"));
     } finally {
@@ -245,8 +256,7 @@ export default function LibraryPage() {
     try {
       setBusy(true);
       await deleteNote(selectedNote.id);
-      setNotes((current) => current.filter((item) => item.id !== selectedNote.id));
-      setSelectedNoteId("");
+      removeNoteAndSelectNext(selectedNote.id);
     } catch (actionError) {
       setError(getErrorMessage(actionError, "Unable to delete note"));
     } finally {
